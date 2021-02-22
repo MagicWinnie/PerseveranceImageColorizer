@@ -1,0 +1,8 @@
+requests>=2.22
+urllib3>=1.25
+bs4
+lxml>=4.6
+selenium==3.141
+numpy>=1.18
+scikit-image<0.18
+opencv-python
