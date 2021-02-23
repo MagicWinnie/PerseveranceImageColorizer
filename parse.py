@@ -43,8 +43,13 @@ if len(argv) == 3:
     if argv[2] == '1':
         READ_URLS_FROM_FILE = True
 
-FOLDER = '\\'.join(os.path.realpath(__file__).split('\\')[:-1])
-SAVE_PATH = os.path.join('\\'.join(os.path.realpath(__file__).split('\\')[:-1]), 'raw_images')
+import platform
+if platform.system() == "Windows":
+    FOLDER = '\\'.join(os.path.realpath(__file__).split('\\')[:-1])
+    SAVE_PATH = os.path.join('\\'.join(os.path.realpath(__file__).split('\\')[:-1]), 'raw_images')
+else:
+    FOLDER = '/'.join(os.path.realpath(__file__).split('/')[:-1])
+    SAVE_PATH = os.path.join('/'.join(os.path.realpath(__file__).split('/')[:-1]), 'raw_images')
 
 if not(os.path.exists(SAVE_PATH)):
     print("[INFO] FOLDER NOT FOUND...")

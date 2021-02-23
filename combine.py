@@ -52,8 +52,14 @@ def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA):
 	resized = cv2.resize(image, dim, interpolation = inter)
 	return resized
 
-FOLDER = '\\'.join(os.path.realpath(__file__).split('\\')[:-1])
-SAVE_PATH = os.path.join('\\'.join(os.path.realpath(__file__).split('\\')[:-1]), 'raw_images')
+import platform
+if platform.system() == "Windows":
+    FOLDER = '\\'.join(os.path.realpath(__file__).split('\\')[:-1])
+    SAVE_PATH = os.path.join('\\'.join(os.path.realpath(__file__).split('\\')[:-1]), 'raw_images')
+else:
+    FOLDER = '/'.join(os.path.realpath(__file__).split('/')[:-1])
+    SAVE_PATH = os.path.join('/'.join(os.path.realpath(__file__).split('/')[:-1]), 'raw_images')
+    
 IMG_PATH = os.path.join(FOLDER, 'color_images')
 FILES = os.listdir(SAVE_PATH)
 
