@@ -33,10 +33,13 @@ FOLDER = '\\'.join(os.path.realpath(__file__).split('\\')[:-1])
 SAVE_PATH = os.path.join('\\'.join(os.path.realpath(__file__).split('\\')[:-1]), 'raw_images')
 
 if not(os.path.exists(SAVE_PATH)):
+    print("[INFO] FOLDER NOT FOUND...")
+    print("[INFO] CREATING AT", SAVE_PATH)
     os.mkdir(SAVE_PATH)
 
 URL = 'https://mars.nasa.gov/mars2020/multimedia/raw-images/'
 
+print("[INFO] STARTING SCRAPING")
 driver = webdriver.Firefox()
 driver.get(URL)
 
@@ -49,6 +52,7 @@ URLS = []
 pages = int(soup.find('span', class_="total_pages").text.strip())
 
 for i in range(pages):
+    print("[INFO] PAGE {}/{}".format(i + 1, pages))
     class_list = soup.find_all('img')
     class_list = list(filter(lambda x: 'mars.nasa.gov/mars2020' in x['src'], class_list))
     URLS += [x['src'] for x in class_list]
@@ -62,10 +66,16 @@ driver.close()
 URLS = list(set(URLS))
 URLS = list(map(process_url, URLS))
 
-for u in URLS:
-    print("Downloading:", u, end = "")
+print("[INFO] FINISHED SCRAPING")
+print("[INFO] FOUND {} URLS".format(len(URLS)))
+print("[INFO] STARTING DOWNLOADING")
+
+for i, u in enumerate(URLS):
+    print("{}/{} Downloading:".format(i + 1, len(URLS)), u, end = "")
     path = os.path.join(SAVE_PATH, u.split("/")[-1])
     if not(download_pictures(u, path)):
-        print("\nDownload failed:", u)
+        print(" - Failed:", u, path)
     else:
         print(" - Saved to:", path)
+
+print("[INFO] FINISHED DOWNLOADING")
