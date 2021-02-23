@@ -7,6 +7,8 @@ from bs4 import BeautifulSoup
 from lxml import html
 from selenium import webdriver
 from selenium.webdriver import ActionChains
+import sys
+import pickle
 import numpy as np
 import os
 
@@ -29,6 +31,18 @@ def download_pictures(url: str, path: str)->bool:
         return True
     return False
 
+# python3 parse.py <WRITE_TO_FILE> <READ_FROM_FILE>
+# example (do not write, but read):
+# python3 parse.py 0 1
+argv = sys.argv
+WRITE_URLS_TO_FILE = False
+READ_URLS_FROM_FILE = False
+if len(argv) == 3:
+    if argv[1] == '1':
+        WRITE_URLS_TO_FILE = True
+    if argv[2] == '1':
+        READ_URLS_FROM_FILE = True
+
 FOLDER = '\\'.join(os.path.realpath(__file__).split('\\')[:-1])
 SAVE_PATH = os.path.join('\\'.join(os.path.realpath(__file__).split('\\')[:-1]), 'raw_images')
 
@@ -39,34 +53,54 @@ if not(os.path.exists(SAVE_PATH)):
 
 URL = 'https://mars.nasa.gov/mars2020/multimedia/raw-images/'
 
-print("[INFO] STARTING SCRAPING")
-driver = webdriver.Firefox()
-driver.get(URL)
+if READ_URLS_FROM_FILE:
+    print("[INFO] READING FROM FILE")
+    with open('URLS', 'rb') as READ:
+        URLS = pickle.load(READ)
+    print("[INFO] FINISHED READING")
+else:
+    print("[INFO] STARTING SCRAPING")
+    driver = webdriver.Firefox()
+    driver.get(URL)
 
-html_raw = driver.page_source
+    html_raw = driver.page_source
 
-soup = BeautifulSoup(html_raw, features="lxml")
+    soup = BeautifulSoup(html_raw, features="lxml")
 
-URLS = []
+    URLS = []
 
-pages = int(soup.find('span', class_="total_pages").text.strip())
+    pages = int(soup.find('span', class_="total_pages").text.strip())
 
-for i in range(pages):
-    print("[INFO] PAGE {}/{}".format(i + 1, pages))
-    class_list = soup.find_all('img')
-    class_list = list(filter(lambda x: 'mars.nasa.gov/mars2020' in x['src'], class_list))
-    URLS += [x['src'] for x in class_list]
-    if i < pages - 1:
-        driver.find_element_by_xpath('/html/body/div[1]/div/div/div[2]/div/div/div[1]/div/div/div[3]/div/div/div/div/div/div[2]/div[2]/div/div/nav/span[2]').click()
-        html_raw = driver.page_source
-        soup = BeautifulSoup(html_raw, features="lxml")
+    for i in range(pages):
+        print("[INFO] PAGE {}/{}".format(i + 1, pages))
+        class_list = soup.find_all('img')
+        class_list_orig = class_list.copy()
+        class_list = list(filter(lambda x: 'mars.nasa.gov/mars2020' in x['src'], class_list))
+        URLS += [x['src'] for x in class_list]
+        if i < pages - 1:
+            driver.find_element_by_xpath('/html/body/div[1]/div/div/div[2]/div/div/div[1]/div/div/div[3]/div/div/div/div/div/div[2]/div[2]/div/div/nav/span[2]').click()
+            html_raw = driver.page_source
+            soup = BeautifulSoup(html_raw, features="lxml")
 
-driver.close()
+    driver.close()
+    print("[INFO] FINISHED SCRAPING")
+
+print(len(URLS))
+
+if WRITE_URLS_TO_FILE:
+    print("[INFO] WRITING TO FILE")
+    with open("URLS", 'wb') as WRITE:
+        pickle.dump(URLS, WRITE)
+    print("[INFO] FINISHED WRITING TO FILE")
+
+# URLS_ORIG = URLS.copy()
+# import collections
+# c = collections.Counter(URLS_ORIG)
+# print(c.most_common(10))
 
 URLS = list(set(URLS))
 URLS = list(map(process_url, URLS))
 
-print("[INFO] FINISHED SCRAPING")
 print("[INFO] FOUND {} URLS".format(len(URLS)))
 print("[INFO] STARTING DOWNLOADING")
 
