@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
-import requests
-import shutil
-import urllib.request
-from lxml import etree
-from bs4 import BeautifulSoup
-from lxml import html
-from selenium import webdriver
-from selenium.webdriver import ActionChains
-import sys
-import pickle
-import numpy as np
 import os
+import shutil
+import requests
+import argparse
+import platform
+import urllib.request
+from tqdm import tqdm
+from pathlib import Path
 
 def process_url(s: str)-> str:
     ind_under = s.rindex('_')
@@ -19,7 +15,7 @@ def process_url(s: str)-> str:
     s = s.replace('jpg', 'png')
     return s
 
-def download_pictures(url: str, path: str)->bool:
+def download_picture(url: str, path: str)->bool:
     r = requests.get(url, stream = True)
 
     if r.status_code == 200:
@@ -31,90 +27,44 @@ def download_pictures(url: str, path: str)->bool:
         return True
     return False
 
-# python3 parse.py <WRITE_TO_FILE> <READ_FROM_FILE>
-# example (do not write, but read):
-# python3 parse.py 0 1
-argv = sys.argv
-WRITE_URLS_TO_FILE = False
-READ_URLS_FROM_FILE = False
-if len(argv) == 3:
-    if argv[1] == '1':
-        WRITE_URLS_TO_FILE = True
-    if argv[2] == '1':
-        READ_URLS_FROM_FILE = True
+parser = argparse.ArgumentParser()
+parser.add_argument("-s", "--sol", type=int, default=-1, help="The sol you want to download (use -1 for all)")
+parser.add_argument("-r", "--rewrite", type=bool, default=False, help="Whether to rewrite existing files or not")
+parser.add_argument("-a", "--api", type=str, required=True, help="Path to the file containing NASA API")
+args = parser.parse_args()
 
-import platform
-if platform.system() == "Windows":
-    FOLDER = '\\'.join(os.path.realpath(__file__).split('\\')[:-1])
-else:
-    FOLDER = '/'.join(os.path.realpath(__file__).split('/')[:-1])
-
+delimeter = '\\' if platform.system() == "Windows" else '/'
+FOLDER = delimeter.join(os.path.realpath(__file__).split(delimeter)[:-1])
 SAVE_PATH = os.path.join(FOLDER, 'raw_images')
+Path(SAVE_PATH).mkdir(parents=True, exist_ok=True)
 
-if not(os.path.exists(SAVE_PATH)):
-    print("[INFO] FOLDER NOT FOUND...")
-    print("[INFO] CREATING AT", SAVE_PATH)
-    os.mkdir(SAVE_PATH)
+with open(args.api, 'r') as f:
+    API = f.read()
 
-URL = 'https://mars.nasa.gov/mars2020/multimedia/raw-images/'
+URL = 'https://api.nasa.gov/mars-photos/api/v1/rovers/perseverance/photos?sol={SOL}&api_key={API}'
+MANIFEST = 'https://api.nasa.gov/mars-photos/api/v1/manifests/perseverance/?api_key={API}'
 
-if READ_URLS_FROM_FILE:
-    print("[INFO] READING FROM FILE")
-    with open('URLS', 'rb') as READ:
-        URLS = pickle.load(READ)
-    print("[INFO] FINISHED READING")
-else:
-    print("[INFO] STARTING SCRAPING")
-    driver = webdriver.Firefox()
-    driver.get(URL)
+print("[INFO] GETTING DATA ABOUT ROVER")
+M_RESPONSE = requests.get(url=MANIFEST.format(API=API)).json()
+SOLS = [x["sol"] for x in M_RESPONSE['photo_manifest']['photos']]
+PHOTOS_INFO = M_RESPONSE['photo_manifest']['photos']
 
-    html_raw = driver.page_source
+if (args.sol not in SOLS) or (args.sol < -1):
+    raise ValueError("Sol number incorrect.\nAvailable: {}".format(SOLS))
 
-    soup = BeautifulSoup(html_raw, features="lxml")
+print("[INFO] STARTED SCRAPING")
 
-    URLS = []
-
-    pages = int(soup.find('span', class_="total_pages").text.strip())
-
-    for i in range(pages):
-        print("[INFO] PAGE {}/{}".format(i + 1, pages))
-        class_list = soup.find_all('img')
-        class_list_orig = class_list.copy()
-        class_list = list(filter(lambda x: 'mars.nasa.gov/mars2020' in x['src'], class_list))
-        URLS += [x['src'] for x in class_list]
-        if i < pages - 1:
-            driver.find_element_by_xpath('/html/body/div[1]/div/div/div[2]/div/div/div[1]/div/div/div[3]/div/div/div/div/div/div[2]/div[2]/div/div/nav/span[2]').click()
-            html_raw = driver.page_source
-            soup = BeautifulSoup(html_raw, features="lxml")
-
-    driver.close()
-    print("[INFO] FINISHED SCRAPING")
-
-print(len(URLS))
-
-if WRITE_URLS_TO_FILE:
-    print("[INFO] WRITING TO FILE")
-    with open("URLS", 'wb') as WRITE:
-        pickle.dump(URLS, WRITE)
-    print("[INFO] FINISHED WRITING TO FILE")
-
-# URLS_ORIG = URLS.copy()
-# import collections
-# c = collections.Counter(URLS_ORIG)
-# print(c.most_common(10))
-
-URLS = list(set(URLS))
-URLS = list(map(process_url, URLS))
-
-print("[INFO] FOUND {} URLS".format(len(URLS)))
-print("[INFO] STARTING DOWNLOADING")
-
-for i, u in enumerate(URLS):
-    print("{}/{} Downloading:".format(i + 1, len(URLS)), u, end = "")
-    path = os.path.join(SAVE_PATH, u.split("/")[-1])
-    if not(download_pictures(u, path)):
-        print(" - Failed:", u, path)
-    else:
-        print(" - Saved to:", path)
+for i in tqdm(range(len(SOLS))):
+    s = SOLS[i]
+    resp = requests.get(url=URL.format(SOL=s, API=API)).json()
+    Path(os.path.join(SAVE_PATH, str(s))).mkdir(parents=True, exist_ok=True)
+    EXISTING = os.listdir(os.path.join(SAVE_PATH, str(s)))
+    for p in tqdm(range(PHOTOS_INFO[i]['total_photos']), leave=False):
+        DOWNLOAD_URL = resp["photos"][p]["img_src"]
+        if not(args.rewrite) and DOWNLOAD_URL.split('/')[-1] in EXISTING:
+            continue
+        status = download_picture(DOWNLOAD_URL, os.path.join(SAVE_PATH, str(s), DOWNLOAD_URL.split('/')[-1]))
+        if not(status):
+            print("Failed: URL: {}; SOL: {}; #: {}".format(DOWNLOAD_URL, s, p))
 
 print("[INFO] FINISHED DOWNLOADING")
