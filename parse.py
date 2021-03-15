@@ -49,7 +49,7 @@ M_RESPONSE = requests.get(url=MANIFEST.format(API=API)).json()
 SOLS = [x["sol"] for x in M_RESPONSE['photo_manifest']['photos']]
 PHOTOS_INFO = M_RESPONSE['photo_manifest']['photos']
 
-if (args.sol not in SOLS) or (args.sol < -1):
+if ((args.sol) != -1 and (args.sol not in SOLS)) or (args.sol < -1):
     raise ValueError("Sol number incorrect.\nAvailable: {}".format(SOLS))
 
 print("[INFO] STARTED SCRAPING")
@@ -61,6 +61,7 @@ for i in tqdm(range(len(SOLS))):
     EXISTING = os.listdir(os.path.join(SAVE_PATH, str(s)))
     for p in tqdm(range(PHOTOS_INFO[i]['total_photos']), leave=False):
         DOWNLOAD_URL = resp["photos"][p]["img_src"]
+        DOWNLOAD_URL = DOWNLOAD_URL.replace('_1200.jpg', '.png')
         if not(args.rewrite) and DOWNLOAD_URL.split('/')[-1] in EXISTING:
             continue
         status = download_picture(DOWNLOAD_URL, os.path.join(SAVE_PATH, str(s), DOWNLOAD_URL.split('/')[-1]))
