@@ -47,6 +47,9 @@ for i in tqdm(range(len(SOLS))):
     for p in range(PHOTOS_INFO[i]['total_photos']):
         url = resp["photos"][p]["img_src"].replace('_1200.jpg', '.png')
         path = os.path.join(SAVE_PATH, str(s))
+        if not(args.rewrite):
+            if url.split('/')[-1] in os.listdir(os.path.join(SAVE_PATH, str(s))):
+                continue
         if args.color == 1:
             if url.split('/')[-1].split('_')[0][-1] == 'F':
                 dl.enqueue_file(url, path=path)
