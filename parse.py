@@ -41,9 +41,12 @@ if ((args.sol) != -1 and (args.sol not in SOLS)) or (args.sol < -1):
 print("[INFO] STARTED SCRAPING")
 for i in tqdm(range(len(SOLS))):
     s = SOLS[i]
+    if args.sol != -1:
+        if s != args.sol:
+            continue
     resp = requests.get(url=URL.format(SOL=s, API=API)).json()
     Path(os.path.join(SAVE_PATH, str(s))).mkdir(parents=True, exist_ok=True)
-    EXISTING = os.listdir(os.path.join(SAVE_PATH, str(s)))
+    
     for p in range(PHOTOS_INFO[i]['total_photos']):
         url = resp["photos"][p]["img_src"].replace('_1200.jpg', '.png')
         path = os.path.join(SAVE_PATH, str(s))
