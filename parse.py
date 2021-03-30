@@ -28,7 +28,7 @@ with open(args.api, 'r') as f:
 URL = 'https://api.nasa.gov/mars-photos/api/v1/rovers/perseverance/photos?sol={SOL}&api_key={API}'
 MANIFEST = 'https://api.nasa.gov/mars-photos/api/v1/manifests/perseverance/?api_key={API}'
 
-dl = Downloader()
+dl = Downloader(overwrite=args.rewrite)
 
 print("[INFO] GETTING DATA ABOUT ROVER")
 M_RESPONSE = requests.get(url=MANIFEST.format(API=API)).json()
@@ -50,9 +50,6 @@ for i in tqdm(range(len(SOLS))):
     for p in range(PHOTOS_INFO[i]['total_photos']):
         url = resp["photos"][p]["img_src"].replace('_1200.jpg', '.png')
         path = os.path.join(SAVE_PATH, str(s))
-        if not(args.rewrite):
-            if url.split('/')[-1] in os.listdir(os.path.join(SAVE_PATH, str(s))):
-                continue
         if args.color == 1:
             if url.split('/')[-1].split('_')[0][-1] == 'F':
                 dl.enqueue_file(url, path=path)
