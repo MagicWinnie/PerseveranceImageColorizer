@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import time
 import shutil
 import requests
 import argparse
@@ -62,4 +63,4 @@ print("[INFO] FINISHED SCRAPING")
 
 print("[INFO] STARTED DOWNLOADING")
 dl.download()
-print("[INFO] FINISHED DOWNLOADING")
+print("\n\n\n\n\n[INFO] FINISHED DOWNLOADING")
