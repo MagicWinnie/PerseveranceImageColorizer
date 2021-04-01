@@ -2,6 +2,8 @@
 *.log
 *.png
 *.jpg
+*.gif
+*.mp4
 *.json
 URLS
 *.api
