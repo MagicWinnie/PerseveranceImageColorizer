@@ -63,4 +63,4 @@ print("[INFO] FINISHED SCRAPING")
 
 print("[INFO] STARTED DOWNLOADING")
 dl.download()
-print("\n\n\n\n\n[INFO] FINISHED DOWNLOADING")
+print("\n"*dl.max_conn + "[INFO] FINISHED DOWNLOADING")
