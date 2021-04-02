@@ -6,5 +6,5 @@
 `python>=3.7`  
 `pip3 install -r requirements.txt`  
 ## How to run  
-`python3 parse.py`  
-`python3 combine.py`
+`python3 parse.py -h`  
+`python3 combine.py -h`
