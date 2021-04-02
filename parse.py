@@ -37,7 +37,7 @@ SOLS = [x["sol"] for x in M_RESPONSE['photo_manifest']['photos']]
 PHOTOS_INFO = M_RESPONSE['photo_manifest']['photos']
 
 if ((args.sol) != -1 and (args.sol not in SOLS)) or (args.sol < -1):
-    raise ValueError("Sol number incorrect.\nAvailable: {}".format(SOLS))
+    raise ValueError("Sol number incorrect.\nAvailable: " + ", ".join(map(str, SOLS)))
 
 print("[INFO] STARTED SCRAPING")
 for i in tqdm(range(len(SOLS))):
@@ -63,4 +63,7 @@ print("[INFO] FINISHED SCRAPING")
 
 print("[INFO] STARTED DOWNLOADING")
 dl.download()
-print("\n"*dl.max_conn + "[INFO] FINISHED DOWNLOADING")
+if dl.queued_downloads == 0:
+    print("[INFO] NO NEW PICTURES")
+else:
+    print("\n"*dl.max_conn + "[INFO] FINISHED DOWNLOADING")
