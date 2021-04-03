@@ -63,7 +63,4 @@ print("[INFO] FINISHED SCRAPING")
 
 print("[INFO] STARTED DOWNLOADING")
 dl.download()
-if dl.queued_downloads == 0:
-    print("[INFO] NO NEW PICTURES")
-else:
-    print("\n"*dl.max_conn + "[INFO] FINISHED DOWNLOADING")
+print("\n"*dl.max_conn + "[INFO] FINISHED DOWNLOADING")
